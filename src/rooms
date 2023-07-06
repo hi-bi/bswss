@@ -1,0 +1,22 @@
+import { users } from "./users.js";
+
+let roomsId = 0;
+const rooms = [];
+
+export const newRoom = function (userId) {
+
+    roomsId++;
+
+    const room = {
+        roomId: roomsId,
+        roomUsers: [{name: users[userId].name, index: userId}]
+    }
+
+    console.log(userId, room);
+    
+    rooms.push(room);
+
+    console.log(rooms);
+    
+    return rooms;
+};
