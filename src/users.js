@@ -1,4 +1,5 @@
-export const users = [];
+export const users = new Map();
+let usersId = 0;
 
 export const userLogin = function (user) {
 
@@ -13,16 +14,21 @@ export const userLogin = function (user) {
     };
 
     try {
-        console.log(user);
 
-        const isName = users.filter(item => item.name == user.name);
-        
-        if (isName.length > 0) {
+        let currentUser;
 
-            const isPassword = users.filter(item => item.name == user.name  && item.password == user.password);
+        for (let item of users.values()) {
+            if (item.name == user.name) {
+                currentUser = item;
+            }
+        }
+      
+        if (currentUser) {
 
-            if (isPassword.length > 0) {
-                resUser.index = users.findIndex((item) => item.name == user.name);
+            const userPassword = currentUser.password;
+
+            if (userPassword == user.password) {
+                resUser.index = currentUser.userId;
 
             } else {
                 resUser.error = true;
@@ -31,8 +37,14 @@ export const userLogin = function (user) {
     
         } else {
 
-            users.push(user);
-            resUser.index = users.findIndex((item) => item.name == user.name);
+            usersId++;
+
+            users.set(usersId, {
+                userId: usersId,
+                name: user.name,
+                password: user.password
+            });
+            resUser.index = usersId;
 
         }
     

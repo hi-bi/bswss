@@ -5,16 +5,55 @@ const rooms = [];
 
 export const newRoom = function (userId) {
 
+    const currentUser = users.get(userId);
+
+    console.log('currentUser: ', currentUser);
+
     roomsId++;
 
     const room = {
         roomId: roomsId,
-        roomUsers: [{name: users[userId].name, index: userId}]
+        roomUsers: [{name: currentUser.name, index: userId}]
     }
 
     console.log(userId, room);
     
     rooms.push(room);
+
+    console.log(rooms);
+    
+    return rooms;
+};
+
+export const addUserToRoom = function (roomId, userId) {
+
+    console.log('addUserToRoom: ', roomId, userId)
+
+    const currentUser = users.get(userId);
+
+    const currentRoomUsers = [];
+    const currentRoom = rooms.filter(item => item.roomId == roomId);
+
+    if (currentRoom.length > 0) {
+
+        currentRoomUsers.push(currentRoom[0].roomUsers[0].index);
+        currentRoomUsers.push(userId);
+        currentRoom[0].roomUsers.push({name: currentUser.name, index: userId})
+    };
+
+    console.log('currentRoom: ', currentRoom);
+    
+    return currentRoomUsers;
+};
+
+export const updateRooms = function () {
+
+    let rmItem = rooms.findIndex((item) => item.roomUsers.length === 2);
+    while (rmItem >= 0) {
+        rooms.splice(rmItem, 1);
+        
+        rmItem = rooms.findIndex((item) => item.roomUsers.length === 2);
+    }
 
     console.log(rooms);
     
