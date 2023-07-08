@@ -1,7 +1,7 @@
   import WebSocket, { WebSocketServer } from 'ws';
   import { userLogin } from './src/users.js';
   import { newRoom, addUserToRoom, updateRooms } from './src/rooms.js';
-  import { newGame, newGameUser, setShips, getGamePartnerData } from './src/games.js';
+  import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse } from './src/games.js';
 
   const port = process.env.SERVER_PORT
 
@@ -85,7 +85,6 @@
               if (client.readyState === WebSocket.OPEN) {
 
                 console.log('update_room res: ',  res);
-
                 
                 client.send(JSON.stringify(res));
               }
@@ -126,6 +125,8 @@
               
                   client.send(JSON.stringify(res));
 
+                  startGame(addShipsData.gameId);
+
 
                   res.type = 'turn';
 
@@ -155,10 +156,80 @@
 
           break;
 
+        case 'attack':          
+
+          console.log('attack');
+      
+          const attackData = JSON.parse(reqData);
+
+          const resultAttack = attackResponse(attackData);
+          const resAttackData = resultAttack.resData;
+          const attackedPlayerId = resultAttack.partnerId;
+
+          console.log('AttackData: ', attackData);
+
+          res.data = JSON.stringify(resAttackData);
+
+          ws.send(JSON.stringify(res));
+          
+          wss.clients.forEach(function each(client) {
+            if (client.readyState === WebSocket.OPEN) {
+
+              if (client.userId == attackedPlayerId) {
+
+                client.send(JSON.stringify(res));
+              }
+            }
+          });
+
+
+          if (resAttackData.status == 'miss') {
+
+            res.type = 'turn';
+            res.data = JSON.stringify({currentPlayer: attackedPlayerId});
+
+            ws.send(JSON.stringify(res));
+
+            wss.clients.forEach(function each(client) {
+              if (client.readyState === WebSocket.OPEN) {
+  
+                if (client.userId == attackedPlayerId) {
+  
+                  client.send(JSON.stringify(res));
+                }
+              }
+            });
+          } else {
+            if (resAttackData.status == 'killed') {
+              
+              const aroundCells = resultAttack.aroundCells;
+              for (let index = 0; index < aroundCells.length; index++) {
+                
+                const item = aroundCells[index];
+                res.data = JSON.stringify(item);
+
+                ws.send(JSON.stringify(res));
+          
+                wss.clients.forEach(function each(client) {
+                  if (client.readyState === WebSocket.OPEN) {
+      
+                    if (client.userId == attackedPlayerId) {
+      
+                      client.send(JSON.stringify(res));
+                    }
+                  }
+                });
+               
+              }
+              
+            }
+          }
+
+          break;
+          
         default:
           break;
       }
-
     
     });
   });

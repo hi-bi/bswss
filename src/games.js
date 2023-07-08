@@ -1,3 +1,4 @@
+import {initField} from './fields.js'
 
 let gamesId = 0;
 const games = new Map();
@@ -65,3 +66,118 @@ export const getGamePartnerData = function (gameId, userId) {
 
     return gamePartnerData;
 };
+
+export const startGame = function (gameId) {
+    
+    const currentGame = games.get(gameId);
+
+    for (let item of currentGame.boards.values()) {
+        item.fld = initField(item.ships);
+        
+        console.log('startGame: ', item)
+    }
+
+};
+
+export const attackResponse = function (attackData) {
+
+    const currentGame = games.get(attackData.gameId);
+
+    let partnerId = 0;
+    let currentBoard = {};
+    for (let item of currentGame.boards.values()) {
+        if (item.indexPlayer != attackData.indexPlayer) {
+            partnerId = item.indexPlayer;
+            currentBoard = item;
+        }
+    } 
+
+    const indexCell = attackData.x * 10 + attackData.y;
+
+    const currentCell = currentBoard.fld.get(indexCell);
+
+    const aroundCells = [];
+
+    if (currentCell.isShip) {
+        currentCell.attack ++;
+        
+        const attackedShip = currentCell.ship;
+        attackedShip.attack ++;
+
+        if (attackedShip.attack < attackedShip.length) {
+            currentCell.status = 'shot';
+        } else {
+            currentCell.status = 'killed';
+
+            let aX = attackedShip.position.x - 1;
+            let aY = attackedShip.position.y - 1;
+
+            let dx = -1;
+            let dy = -1;
+
+            for (let k = 0; k < 3; k++) {
+
+                if (!attackedShip.direction) {
+                    dx = 1; 
+                    dy = 0;
+                } else {
+                    dx = 0; 
+                    dy = 1;
+                }
+        
+                for (let index = 0; index < attackedShip.length+2; index++) {
+
+                    if (((aX >= 0 && aX <= 9 && aY >= 0 && aY <= 9) && (k == 0 || k == 2))
+                        || ((aX >= 0 && aX <= 9 && aY >= 0 && aY <= 9) && k == 1 && (index == 0 || index == attackedShip.length+1))) {
+
+                        currentBoard.fld.set(aX*10 + aY, {
+                            attack: 1,
+                            status: 'miss'
+                        })
+                    
+                        const missCell = {
+                            position:{
+                                x: aX,
+                                y: aY
+                            },
+                            currentPlayer: attackData.indexPlayer,
+                            status: 'miss'
+                        }
+
+                        aroundCells.push(missCell);
+                    }
+        
+                    aX = aX + dx;
+                    aY = aY + dy;
+                }
+    
+                if (!attackedShip.direction) {
+                    aX = attackedShip.position.x - 1;
+                    aY ++; 
+                } else {
+                    aX ++; 
+                    aY = attackedShip.position.y - 1;
+                }
+
+            } 
+
+            console.log('aroundCells: ', aroundCells);
+        }
+
+    } else {
+        currentCell.attack ++;
+        currentCell.status = 'miss';
+    };
+    
+    const resData = {
+        position: {
+            x: attackData.x,
+            y: attackData.y,
+        },
+        currentPlayer: attackData.indexPlayer,
+        status: currentCell.status,
+    };
+    
+    return {resData, partnerId, aroundCells};
+};
+
