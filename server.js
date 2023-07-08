@@ -219,7 +219,25 @@
                     }
                   }
                 });
-               
+              }
+
+              const finish = resultAttack.finish
+              if (finish) {
+                res.type = 'finish';
+                res.data = JSON.stringify({winPlayer: attackData.indexPlayer});
+    
+                ws.send(JSON.stringify(res));
+    
+                wss.clients.forEach(function each(client) {
+                  if (client.readyState === WebSocket.OPEN) {
+      
+                    if (client.userId == attackedPlayerId) {
+      
+                      client.send(JSON.stringify(res));
+                    }
+                  }
+                });
+
               }
               
             }

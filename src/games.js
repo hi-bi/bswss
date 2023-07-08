@@ -83,6 +83,7 @@ export const attackResponse = function (attackData) {
 
     const currentGame = games.get(attackData.gameId);
 
+    let finish = true;
     let partnerId = 0;
     let currentBoard = {};
     for (let item of currentGame.boards.values()) {
@@ -145,6 +146,24 @@ export const attackResponse = function (attackData) {
                         }
 
                         aroundCells.push(missCell);
+                    } else {
+                        if ( (aX >= 0 && aX <= 9 && aY >= 0 && aY <= 9) && k == 1 && (index > 0 || index < attackedShip.length+1) ) {
+                            currentBoard.fld.set(aX*10 + aY, {
+                                attack: 1,
+                                status: 'killed'
+                            });
+
+                            const killedCell = {
+                                position:{
+                                    x: aX,
+                                    y: aY
+                                },
+                                currentPlayer: attackData.indexPlayer,
+                                status: 'killed'
+                            }
+
+                            aroundCells.push(killedCell);
+                        }
                     }
         
                     aX = aX + dx;
@@ -162,6 +181,13 @@ export const attackResponse = function (attackData) {
             } 
 
             console.log('aroundCells: ', aroundCells);
+
+            for (let item of currentBoard.fld.values()) {
+                if (item.isShip && item.status == '') {
+                    finish = false;
+                }
+            }
+            
         }
 
     } else {
@@ -178,6 +204,6 @@ export const attackResponse = function (attackData) {
         status: currentCell.status,
     };
     
-    return {resData, partnerId, aroundCells};
+    return {resData, partnerId, aroundCells, finish};
 };
 
