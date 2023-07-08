@@ -34,10 +34,11 @@ export const addUserToRoom = function (roomId, userId) {
     const currentRoomUsers = [];
     const currentRoom = rooms.filter(item => item.roomId == roomId);
 
-    if (currentRoom.length > 0) {
+    if (currentRoom.length > 0 && currentRoom[0].roomUsers[0].index != userId) {
 
         currentRoomUsers.push(currentRoom[0].roomUsers[0].index);
         currentRoomUsers.push(userId);
+        
         currentRoom[0].roomUsers.push({name: currentUser.name, index: userId})
     };
 
