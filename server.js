@@ -1,253 +1,262 @@
-  import WebSocket, { WebSocketServer } from 'ws';
-  import { userLogin } from './src/users.js';
-  import { newRoom, addUserToRoom, updateRooms } from './src/rooms.js';
-  import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse } from './src/games.js';
+    import WebSocket, { WebSocketServer } from 'ws';
+    import { userLogin } from './src/users.js';
+    import { newRoom, addUserToRoom, updateRooms } from './src/rooms.js';
+    import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse, getTurnUserId, setTurnUserId } from './src/games.js';
 
-  const port = process.env.SERVER_PORT
+    const port = process.env.SERVER_PORT
 
-  const wss = new WebSocketServer({ port: 3000 });
+    const wss = new WebSocketServer({ port: 3000 });
 
-  console.log(`Web socket server running on port: ${wss.options.port}`);
+    console.log(`Web socket server running on port: ${wss.options.port}`);
 
-  wss.on('connection', function connection(ws) {
-    ws.on('error', console.error);
+    wss.on('connection', function connection(ws) {
+      ws.on('error', console.error);
 
-    ws.on('message', function message(data) {
-      const req = JSON.parse(data);
-      const reqCommand = req.type;
-      const reqData = req.data;
+      ws.on('message', function message(data) {
+        const req = JSON.parse(data);
+        const reqCommand = req.type;
+        const reqData = req.data;
 
-      let res = req;
-      let resData = {};
+        let res = req;
+        let resData = {};
 
-      console.log(`type-${reqCommand}: ${reqData}`);
-      
-      switch (reqCommand) {
-        case 'reg':
-            resData = userLogin(JSON.parse(reqData));
-            ws.userId = resData.index;
-            res.data = JSON.stringify(resData);
-            
-            ws.send(JSON.stringify(res));        
-          break;
-
-        case 'create_room':
-            resData = newRoom(ws.userId);
-
-            res.type = 'update_room';
-            res.data = JSON.stringify(resData);
-            
-            wss.clients.forEach(function each(client) {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(res));
-              }
-            });
-            
-          break;
+        console.log(`type-${reqCommand}: ${reqData}`);
         
-        case 'add_user_to_room':
+        switch (reqCommand) {
+          case 'reg':
+              resData = userLogin(JSON.parse(reqData));
+              ws.userId = resData.index;
+              res.data = JSON.stringify(resData);
+              
+              ws.send(JSON.stringify(res));        
+            break;
+
+          case 'create_room':
+              resData = newRoom(ws.userId);
+
+              res.type = 'update_room';
+              res.data = JSON.stringify(resData);
+              
+              wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+                  client.send(JSON.stringify(res));
+                }
+              });
+              
+            break;
           
-          console.log('add_user_to_room');
-          
-          const addRoom = JSON.parse(reqData);
-          const addUser = ws.userId;
+          case 'add_user_to_room':
+            
+            console.log('add_user_to_room');
+            
+            const addRoom = JSON.parse(reqData);
+            const addUser = ws.userId;
 
-          const currentRoomUsers = addUserToRoom(addRoom.indexRoom, addUser);
+            const currentRoomUsers = addUserToRoom(addRoom.indexRoom, addUser);
 
-          console.log('currentRoomUsers: ', currentRoomUsers);
-          
-          if (currentRoomUsers.length == 2) {
+            console.log('currentRoomUsers: ', currentRoomUsers);
+            
+            if (currentRoomUsers.length == 2) {
 
-            const newGameId = newGame();
+              const newGameId = newGame();
 
-            wss.clients.forEach(function each(client) {
-              if (client.readyState === WebSocket.OPEN) {
-                if (client.userId == currentRoomUsers[0] || client.userId == currentRoomUsers[1]) {
+              wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+                  if (client.userId == currentRoomUsers[0] || client.userId == currentRoomUsers[1]) {
 
-                  res.type = 'create_game';
+                    res.type = 'create_game';
 
-                  const resNewGameData = newGameUser(newGameId, client.userId);
-                  res.data = JSON.stringify(resNewGameData);
+                    const resNewGameData = newGameUser(newGameId, client.userId);
+                    res.data = JSON.stringify(resNewGameData);
 
-                  console.log('create_game res: ',  res);
+                    console.log('create_game res: ',  res);
+                    
+                    client.send(JSON.stringify(res));
+                  }
+                }
+              });
+
+              res.type = 'update_room';
+              
+              const resNewGameRooms = updateRooms();
+              res.data = JSON.stringify(resNewGameRooms);
+
+              wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+
+                  console.log('update_room res: ',  res);
                   
                   client.send(JSON.stringify(res));
                 }
-              }
-            });
+              });
 
-            res.type = 'update_room';
+            }
+
+            break;
+
+          case 'add_ships':
             
-            const resNewGameRooms = updateRooms();
-            res.data = JSON.stringify(resNewGameRooms);
+            console.log('add_ships');
+      
+            const addShipsData = JSON.parse(reqData);
 
-            wss.clients.forEach(function each(client) {
-              if (client.readyState === WebSocket.OPEN) {
+            const resSetShips = setShips(addShipsData)
 
-                console.log('update_room res: ',  res);
-                
-                client.send(JSON.stringify(res));
-              }
-            });
+            console.log('resSetShips: ',resSetShips);
 
-          }
+            if (resSetShips.init == 2) {
 
-          break;
+              res.type = 'start_game';
 
-        case 'add_ships':
-          
-          console.log('add_ships');
-    
-          const addShipsData = JSON.parse(reqData);
-
-          const resSetShips = setShips(addShipsData)
-
-          console.log('resSetShips: ',resSetShips);
-
-          if (resSetShips.init == 2) {
-
-            res.type = 'start_game';
-
-            const newGamePartnerData = getGamePartnerData(addShipsData.gameId, addShipsData.indexPlayer);
-            
-            const newGameCurrentUserData = getGamePartnerData(addShipsData.gameId, newGamePartnerData.currentPlayerIndex);
-
-            res.data = JSON.stringify(newGameCurrentUserData);
-
-            ws.send(JSON.stringify(res));
-
-            wss.clients.forEach(function each(client) {
-              if (client.readyState === WebSocket.OPEN) {
-
-                if (client.userId == newGamePartnerData.currentPlayerIndex) {
-
-                  res.data = JSON.stringify(newGamePartnerData);
+              const newGamePartnerData = getGamePartnerData(addShipsData.gameId, addShipsData.indexPlayer);
               
-                  client.send(JSON.stringify(res));
+              const newGameCurrentUserData = getGamePartnerData(addShipsData.gameId, newGamePartnerData.currentPlayerIndex);
 
-                  startGame(addShipsData.gameId);
+              res.data = JSON.stringify(newGameCurrentUserData);
+
+              ws.send(JSON.stringify(res));
+
+              wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+
+                  if (client.userId == newGamePartnerData.currentPlayerIndex) {
+
+                    res.data = JSON.stringify(newGamePartnerData);
+                
+                    client.send(JSON.stringify(res));
+
+                    startGame(addShipsData.gameId);
 
 
-                  res.type = 'turn';
+                    res.type = 'turn';
 
-                  const turnPlayerId = {
-                    currentPlayer: addShipsData.indexPlayer
-                  };
+                    setTurnUserId(addShipsData.gameId, addShipsData.indexPlayer)
+
+                    const turnPlayerId = {
+                      currentPlayer: addShipsData.indexPlayer
+                    };
+          
+                    res.data = JSON.stringify(turnPlayerId);
         
-                  res.data = JSON.stringify(turnPlayerId);
-      
-                  client.send(JSON.stringify(res));
+                    client.send(JSON.stringify(res));
 
+                  }
                 }
-              }
-            });
+              });
 
-            res.type = 'turn';
+              res.type = 'turn';
 
-            const turnPlayerId = {
-              currentPlayer: addShipsData.indexPlayer
-            };
-  
-            res.data = JSON.stringify(turnPlayerId);
+              const turnPlayerId = {
+                currentPlayer: addShipsData.indexPlayer
+              };
+    
+              res.data = JSON.stringify(turnPlayerId);
 
-            ws.send(JSON.stringify(res));
+              ws.send(JSON.stringify(res));
 
-          } 
+            } 
 
-          break;
+            break;
 
-        case 'attack':          
+          case 'attack':          
 
-          console.log('attack');
-      
-          const attackData = JSON.parse(reqData);
+            console.log('attack');
+        
+            const attackData = JSON.parse(reqData);
 
-          const resultAttack = attackResponse(attackData);
-          const resAttackData = resultAttack.resData;
-          const attackedPlayerId = resultAttack.partnerId;
-
-          console.log('AttackData: ', attackData);
-
-          res.data = JSON.stringify(resAttackData);
-
-          ws.send(JSON.stringify(res));
-          
-          wss.clients.forEach(function each(client) {
-            if (client.readyState === WebSocket.OPEN) {
-
-              if (client.userId == attackedPlayerId) {
-
-                client.send(JSON.stringify(res));
-              }
+            if (attackData.indexPlayer != getTurnUserId(attackData.gameId)) {
+              return;
             }
-          });
 
+            const resultAttack = attackResponse(attackData);
+            const resAttackData = resultAttack.resData;
+            const attackedPlayerId = resultAttack.partnerId;
 
-          if (resAttackData.status == 'miss') {
+            console.log('AttackData: ', attackData);
 
-            res.type = 'turn';
-            res.data = JSON.stringify({currentPlayer: attackedPlayerId});
+            res.data = JSON.stringify(resAttackData);
 
             ws.send(JSON.stringify(res));
-
+            
             wss.clients.forEach(function each(client) {
               if (client.readyState === WebSocket.OPEN) {
-  
+
                 if (client.userId == attackedPlayerId) {
-  
+
                   client.send(JSON.stringify(res));
                 }
               }
             });
-          } else {
-            if (resAttackData.status == 'killed') {
+
+
+            if (resAttackData.status == 'miss') {
+
+              res.type = 'turn';
               
-              const aroundCells = resultAttack.aroundCells;
-              for (let index = 0; index < aroundCells.length; index++) {
+              setTurnUserId(attackData.gameId, attackedPlayerId)
+              
+              res.data = JSON.stringify({currentPlayer: attackedPlayerId});
+
+              ws.send(JSON.stringify(res));
+
+              wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+    
+                  if (client.userId == attackedPlayerId) {
+    
+                    client.send(JSON.stringify(res));
+                  }
+                }
+              });
+            } else {
+              if (resAttackData.status == 'killed') {
                 
-                const item = aroundCells[index];
-                res.data = JSON.stringify(item);
+                const aroundCells = resultAttack.aroundCells;
+                for (let index = 0; index < aroundCells.length; index++) {
+                  
+                  const item = aroundCells[index];
+                  res.data = JSON.stringify(item);
 
-                ws.send(JSON.stringify(res));
-          
-                wss.clients.forEach(function each(client) {
-                  if (client.readyState === WebSocket.OPEN) {
-      
-                    if (client.userId == attackedPlayerId) {
-      
-                      client.send(JSON.stringify(res));
+                  ws.send(JSON.stringify(res));
+            
+                  wss.clients.forEach(function each(client) {
+                    if (client.readyState === WebSocket.OPEN) {
+        
+                      if (client.userId == attackedPlayerId) {
+        
+                        client.send(JSON.stringify(res));
+                      }
                     }
-                  }
-                });
-              }
+                  });
+                }
 
-              const finish = resultAttack.finish
-              if (finish) {
-                res.type = 'finish';
-                res.data = JSON.stringify({winPlayer: attackData.indexPlayer});
-    
-                ws.send(JSON.stringify(res));
-    
-                wss.clients.forEach(function each(client) {
-                  if (client.readyState === WebSocket.OPEN) {
+                const finish = resultAttack.finish
+                if (finish) {
+                  res.type = 'finish';
+                  res.data = JSON.stringify({winPlayer: attackData.indexPlayer});
       
-                    if (client.userId == attackedPlayerId) {
+                  ws.send(JSON.stringify(res));
       
-                      client.send(JSON.stringify(res));
+                  wss.clients.forEach(function each(client) {
+                    if (client.readyState === WebSocket.OPEN) {
+        
+                      if (client.userId == attackedPlayerId) {
+        
+                        client.send(JSON.stringify(res));
+                      }
                     }
-                  }
-                });
+                  });
 
+                }
+                
               }
-              
             }
-          }
 
-          break;
-          
-        default:
-          break;
-      }
-    
+            break;
+            
+          default:
+            break;
+        }
+      
+      });
     });
-  });

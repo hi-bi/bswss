@@ -21,6 +21,7 @@ export const newGameUser = function (gameId, userId) {
     boards.set( userId,
         {
             gameId: gameId,
+            turnUserId: 0,
             ships: [],
             indexPlayer: userId,
         }
@@ -51,6 +52,19 @@ export const setShips = function (data) {
         }
     }
 };
+
+export const setTurnUserId = function (gameId, userId) {
+
+    const currentGame = games.get(gameId);
+    currentGame.turnUserId = userId;
+};
+
+export const getTurnUserId = function (gameId) {
+
+    const currentGame = games.get(gameId);
+    return currentGame.turnUserId;
+};
+
 
 export const getGamePartnerData = function (gameId, userId) {
 
