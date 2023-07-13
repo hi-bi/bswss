@@ -1,21 +1,39 @@
-export const users = new Map();
+interface InternalUser {
+    userId: number;
+    name: string;
+    password: string;
+}
+
+export const users = new Map<number, InternalUser>();
 let usersId = 0;
 
-export const userLogin = function (user) {
+export interface User  {
+    name: string;
+    password: string;
+}
+
+export interface ResponseUser  {
+    name: string;
+    index: number;
+    error: boolean; 
+    errorText: string; 
+}
+
+export const userLogin = function (user: User) {
 
     user.name = user.name.trim();
     user.password = user.password.trim();
 
-    let resUser = {
-        name: user.name, 
-        index: -1, 
+    let resUser: ResponseUser = {
+        name: user.name,
+        index: -1,
         error: false, 
         errorText: '' 
     };
 
     try {
 
-        let currentUser;
+        let currentUser: InternalUser | undefined;
 
         for (let item of users.values()) {
             if (item.name == user.name) {
@@ -53,8 +71,10 @@ export const userLogin = function (user) {
         return resUser;
             
     } catch (error) {
-        resUser.error = true;
-        resUser.errorText = error.message;
+        if (error instanceof Error) {
+            resUser.error = true;
+            resUser.errorText = error.message;
+        }
 
         return resUser;
     }
