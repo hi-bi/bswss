@@ -2,10 +2,20 @@
     import { userLogin } from './interfaces/users';
     import { newRoom, addUserToRoom, updateRooms } from './interfaces/rooms';
     import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse, getTurnUserId, setTurnUserId } from './interfaces/games';
+    import { getSessionUser, getUserSession } from './interfaces/user_session';
 
-    const port = process.env.SERVER_PORT
+    const serverPort: number = parseInt(process.env.SERVER_PORT || '30000'); 
 
-    const wss = new WebSocketServer({ port: 3000 });
+    class WSS extends WebSocketServer {
+      userId: number = -1;
+      constructor(
+        port: number
+      ) {
+        super({port: port});
+      }
+    } 
+
+    const wss = new WSS(serverPort);
 
     console.log(`Web socket server running on port: ${wss.options.port}`);
 
@@ -13,35 +23,42 @@
       ws.on('error', console.error);
 
       ws.on('message', function message(data) {
-        const req = JSON.parse(data);
+        let body = '';
+        body += data;
+        const req = JSON.parse(body);
         const reqCommand = req.type;
         const reqData = req.data;
 
         let res = req;
-        let resData = {};
+        let resData: any = {};
+        let userId: number | undefined;
+        let userWs: WebSocket | undefined;
 
         console.log(`type-${reqCommand}: ${reqData}`);
         
         switch (reqCommand) {
           case 'reg':
-              resData = userLogin(JSON.parse(reqData));
-              ws.userId = resData.index;
-              res.data = JSON.stringify(resData);
-              
-              ws.send(JSON.stringify(res));        
+            resData = userLogin(JSON.parse(reqData), ws);
+
+            res.data = JSON.stringify(resData);
+            
+            ws.send(JSON.stringify(res));        
             break;
 
           case 'create_room':
-              resData = newRoom(ws.userId);
 
-              res.type = 'update_room';
-              res.data = JSON.stringify(resData);
-              
-              wss.clients.forEach(function each(client) {
-                if (client.readyState === WebSocket.OPEN) {
-                  client.send(JSON.stringify(res));
-                }
-              });
+            userId = getSessionUser(ws);
+            
+            resData = newRoom(userId);
+
+            res.type = 'update_room';
+            res.data = JSON.stringify(resData);
+            
+            wss.clients.forEach(function each(client) {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(res));
+              }
+            });
               
             break;
           
@@ -50,7 +67,7 @@
             console.log('add_user_to_room');
             
             const addRoom = JSON.parse(reqData);
-            const addUser = ws.userId;
+            const addUser = getSessionUser(ws);
 
             const currentRoomUsers = addUserToRoom(addRoom.indexRoom, addUser);
 
@@ -60,21 +77,24 @@
 
               const newGameId = newGame();
 
-              wss.clients.forEach(function each(client) {
-                if (client.readyState === WebSocket.OPEN) {
-                  if (client.userId == currentRoomUsers[0] || client.userId == currentRoomUsers[1]) {
+              res.type = 'create_game';
+            
+              userWs = getUserSession(currentRoomUsers[0]);
+              let resNewGameData = newGameUser(newGameId, currentRoomUsers[0]);
+              res.data = JSON.stringify(resNewGameData);
+              if (userWs) {
+                userWs.send(JSON.stringify(res));
+                console.log('create_game res: ',  res);
+              }
 
-                    res.type = 'create_game';
+              userWs = getUserSession(currentRoomUsers[1]);
+              resNewGameData = newGameUser(newGameId, currentRoomUsers[1]);
+              res.data = JSON.stringify(resNewGameData);
+              if (userWs) {
+                userWs.send(JSON.stringify(res));
+                console.log('create_game res: ',  res);
+              }
 
-                    const resNewGameData = newGameUser(newGameId, client.userId);
-                    res.data = JSON.stringify(resNewGameData);
-
-                    console.log('create_game res: ',  res);
-                    
-                    client.send(JSON.stringify(res));
-                  }
-                }
-              });
 
               res.type = 'update_room';
               
@@ -116,42 +136,32 @@
 
               ws.send(JSON.stringify(res));
 
-              wss.clients.forEach(function each(client) {
-                if (client.readyState === WebSocket.OPEN) {
 
-                  if (client.userId == newGamePartnerData.currentPlayerIndex) {
-
-                    res.data = JSON.stringify(newGamePartnerData);
-                
-                    client.send(JSON.stringify(res));
-
-                    startGame(addShipsData.gameId);
-
-
-                    res.type = 'turn';
-
-                    setTurnUserId(addShipsData.gameId, addShipsData.indexPlayer)
-
-                    const turnPlayerId = {
-                      currentPlayer: addShipsData.indexPlayer
-                    };
-          
-                    res.data = JSON.stringify(turnPlayerId);
-        
-                    client.send(JSON.stringify(res));
-
-                  }
+              userId == newGamePartnerData.currentPlayerIndex;
+              res.data = JSON.stringify(newGamePartnerData);
+              if (userId) {
+                userWs = getUserSession(userId);
+                if (userWs) {
+                  userWs.send(JSON.stringify(res));
                 }
-              });
+              }
+
+              startGame(addShipsData.gameId);
 
               res.type = 'turn';
-
-              const turnPlayerId = {
+              
+              setTurnUserId(addShipsData.gameId, addShipsData.indexPlayer)
+              const turnPlayerId: any = {
                 currentPlayer: addShipsData.indexPlayer
               };
     
               res.data = JSON.stringify(turnPlayerId);
+              if (userWs) {
+                userWs.send(JSON.stringify(res));
+              }
+    
 
+              res.data = JSON.stringify(turnPlayerId);
               ws.send(JSON.stringify(res));
 
             } 
@@ -177,16 +187,11 @@
             res.data = JSON.stringify(resAttackData);
 
             ws.send(JSON.stringify(res));
-            
-            wss.clients.forEach(function each(client) {
-              if (client.readyState === WebSocket.OPEN) {
 
-                if (client.userId == attackedPlayerId) {
-
-                  client.send(JSON.stringify(res));
-                }
-              }
-            });
+            userWs = getUserSession(attackedPlayerId);
+            if (userWs) {
+              userWs.send(JSON.stringify(res));
+            }
 
 
             if (resAttackData.status == 'miss') {
@@ -196,18 +201,13 @@
               setTurnUserId(attackData.gameId, attackedPlayerId)
               
               res.data = JSON.stringify({currentPlayer: attackedPlayerId});
-
               ws.send(JSON.stringify(res));
 
-              wss.clients.forEach(function each(client) {
-                if (client.readyState === WebSocket.OPEN) {
-    
-                  if (client.userId == attackedPlayerId) {
-    
-                    client.send(JSON.stringify(res));
-                  }
-                }
-              });
+              userWs = getUserSession(attackedPlayerId);
+              if (userWs) {
+                userWs.send(JSON.stringify(res));
+              }
+
             } else {
               if (resAttackData.status == 'killed') {
                 
@@ -218,16 +218,12 @@
                   res.data = JSON.stringify(item);
 
                   ws.send(JSON.stringify(res));
+
+                  userWs = getUserSession(attackedPlayerId);
+                  if (userWs) {
+                    userWs.send(JSON.stringify(res));
+                  }
             
-                  wss.clients.forEach(function each(client) {
-                    if (client.readyState === WebSocket.OPEN) {
-        
-                      if (client.userId == attackedPlayerId) {
-        
-                        client.send(JSON.stringify(res));
-                      }
-                    }
-                  });
                 }
 
                 const finish = resultAttack.finish
@@ -236,16 +232,11 @@
                   res.data = JSON.stringify({winPlayer: attackData.indexPlayer});
       
                   ws.send(JSON.stringify(res));
-      
-                  wss.clients.forEach(function each(client) {
-                    if (client.readyState === WebSocket.OPEN) {
-        
-                      if (client.userId == attackedPlayerId) {
-        
-                        client.send(JSON.stringify(res));
-                      }
-                    }
-                  });
+
+                  userWs = getUserSession(attackedPlayerId);
+                  if (userWs) {
+                    userWs.send(JSON.stringify(res));
+                  }
 
                 }
                 

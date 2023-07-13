@@ -14,7 +14,7 @@ export const newGame = function () {
     return gamesId;
 };
 
-export const newGameUser = function (gameId, userId) {
+export const newGameUser = function (gameId: any, userId: any) {
 
     const boards = games.get(gameId).boards;
 
@@ -32,7 +32,7 @@ export const newGameUser = function (gameId, userId) {
     return {idGame: gameId, idPlayer: userId};
 };
 
-export const setShips = function (data) {
+export const setShips = function (data: any) {
 
     const inGameId = data.gameId;
     const inShips = data.ships;
@@ -53,23 +53,23 @@ export const setShips = function (data) {
     }
 };
 
-export const setTurnUserId = function (gameId, userId) {
+export const setTurnUserId = function (gameId: any, userId: any) {
 
     const currentGame = games.get(gameId);
     currentGame.turnUserId = userId;
 };
 
-export const getTurnUserId = function (gameId) {
+export const getTurnUserId = function (gameId: any) {
 
     const currentGame = games.get(gameId);
     return currentGame.turnUserId;
 };
 
 
-export const getGamePartnerData = function (gameId, userId) {
+export const getGamePartnerData = function (gameId: any, userId: any) {
 
     const currentGame = games.get(gameId);
-    let gamePartnerData = {};
+    let gamePartnerData: any = {};
 
     for (let item of currentGame.boards.values()) {
         if (item.indexPlayer != userId) {
@@ -81,7 +81,7 @@ export const getGamePartnerData = function (gameId, userId) {
     return gamePartnerData;
 };
 
-export const startGame = function (gameId) {
+export const startGame = function (gameId: any) {
     
     const currentGame = games.get(gameId);
 
@@ -93,13 +93,13 @@ export const startGame = function (gameId) {
 
 };
 
-export const attackResponse = function (attackData) {
+export const attackResponse = function (attackData: any) {
 
     const currentGame = games.get(attackData.gameId);
 
     let finish = true;
     let partnerId = 0;
-    let currentBoard = {};
+    let currentBoard: any = {};
     for (let item of currentGame.boards.values()) {
         if (item.indexPlayer != attackData.indexPlayer) {
             partnerId = item.indexPlayer;

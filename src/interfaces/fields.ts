@@ -1,4 +1,4 @@
-export const initField = function (ships) {
+export const initField = function (ships: any) {
 
     const fld = new Map();
     let dx = 0;

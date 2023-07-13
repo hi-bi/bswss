@@ -1,17 +1,27 @@
 import { users } from "./users.js";
 
-let roomsId = 0;
-const rooms = [];
+interface RoomUsers {
+    name: string;
+    index: number
+}
 
-export const newRoom = function (userId) {
+interface Room {
+    roomId: number;
+    roomUsers: RoomUsers[];
+}
 
-    const currentUser = users.get(userId);
+let roomsId: number = 0;
+const rooms: Room[] = [];
+
+export const newRoom = function (userId: any) {
+
+    const currentUser: any = users.get(userId);
 
     console.log('currentUser: ', currentUser);
 
     roomsId++;
 
-    const room = {
+    const room: Room = {
         roomId: roomsId,
         roomUsers: [{name: currentUser.name, index: userId}]
     }
@@ -25,13 +35,13 @@ export const newRoom = function (userId) {
     return rooms;
 };
 
-export const addUserToRoom = function (roomId, userId) {
+export const addUserToRoom = function (roomId: any, userId: any) {
 
     console.log('addUserToRoom: ', roomId, userId)
 
-    const currentUser = users.get(userId);
+    const currentUser: any = users.get(userId);
 
-    const currentRoomUsers = [];
+    const currentRoomUsers: any = [];
     const currentRoom = rooms.filter(item => item.roomId == roomId);
 
     if (currentRoom.length > 0 && currentRoom[0].roomUsers[0].index != userId) {

@@ -1,3 +1,6 @@
+import { WebSocket } from 'ws';
+import {addUserSession} from './user_session';
+
 interface InternalUser {
     userId: number;
     name: string;
@@ -19,7 +22,7 @@ export interface ResponseUser  {
     errorText: string; 
 }
 
-export const userLogin = function (user: User) {
+export const userLogin = function (user: User, ws: WebSocket) {
 
     user.name = user.name.trim();
     user.password = user.password.trim();
@@ -64,6 +67,7 @@ export const userLogin = function (user: User) {
             });
             resUser.index = usersId;
 
+            addUserSession(usersId, ws);
         }
     
         console.log(users);
