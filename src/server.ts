@@ -1,7 +1,7 @@
     import WebSocket, { WebSocketServer } from 'ws';
-    import { userLogin } from './src/users.js';
-    import { newRoom, addUserToRoom, updateRooms } from './src/rooms.js';
-    import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse, getTurnUserId, setTurnUserId } from './src/games.js';
+    import { userLogin } from './interfaces/users';
+    import { newRoom, addUserToRoom, updateRooms } from './interfaces/rooms';
+    import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse, getTurnUserId, setTurnUserId } from './interfaces/games';
 
     const port = process.env.SERVER_PORT
 
