@@ -49,6 +49,8 @@ export const userLogin = function (user: User, ws: WebSocket) {
             const userPassword = currentUser.password;
 
             if (userPassword == user.password) {
+                
+
                 resUser.index = currentUser.userId;
 
             } else {

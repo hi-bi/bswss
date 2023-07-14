@@ -1,4 +1,4 @@
-import {initField} from './fields.js'
+import {initField} from './fields'
 
 let gamesId = 0;
 const games = new Map();
@@ -88,7 +88,7 @@ export const startGame = function (gameId: any) {
     for (let item of currentGame.boards.values()) {
         item.fld = initField(item.ships);
         
-        console.log('startGame: ', item)
+        //console.log('startGame: ', item)
     }
 
 };

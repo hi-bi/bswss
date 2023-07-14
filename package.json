@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Backend implementation of the battleship frontend using nodejs web sockets",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "start": "nodemon -e ts --watch src .env --exec \"tsc --incremental && ts-node src/server.ts\"",
     "start:dev": "nodemon --exec ts-node ./src/server.ts",

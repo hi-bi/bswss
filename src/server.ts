@@ -4,18 +4,9 @@
     import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse, getTurnUserId, setTurnUserId } from './interfaces/games';
     import { getSessionUser, getUserSession } from './interfaces/user_session';
 
-    const serverPort: number = parseInt(process.env.SERVER_PORT || '30000'); 
+    const serverPort: number = parseInt(process.env.SERVER_PORT || '3000'); 
 
-    class WSS extends WebSocketServer {
-      userId: number = -1;
-      constructor(
-        port: number
-      ) {
-        super({port: port});
-      }
-    } 
-
-    const wss = new WSS(serverPort);
+    const wss = new WebSocketServer ({port: serverPort});
 
     console.log(`Web socket server running on port: ${wss.options.port}`);
 
@@ -26,6 +17,7 @@
         let body = '';
         body += data;
         const req = JSON.parse(body);
+        
         const reqCommand = req.type;
         const reqData = req.data;
 
@@ -34,15 +26,22 @@
         let userId: number | undefined;
         let userWs: WebSocket | undefined;
 
+        let resNewGameRooms = updateRooms();
+
         console.log(`type-${reqCommand}: ${reqData}`);
         
         switch (reqCommand) {
           case 'reg':
-            resData = userLogin(JSON.parse(reqData), ws);
 
+            resData = userLogin(JSON.parse(reqData), ws);
             res.data = JSON.stringify(resData);
-            
             ws.send(JSON.stringify(res));        
+
+            res.type = 'update_room';
+            resNewGameRooms = updateRooms();
+            res.data = JSON.stringify(resNewGameRooms);
+            ws.send(JSON.stringify(res));
+
             break;
 
           case 'create_room':
@@ -98,7 +97,7 @@
 
               res.type = 'update_room';
               
-              const resNewGameRooms = updateRooms();
+              resNewGameRooms = updateRooms();
               res.data = JSON.stringify(resNewGameRooms);
 
               wss.clients.forEach(function each(client) {
@@ -122,22 +121,19 @@
 
             const resSetShips = setShips(addShipsData)
 
-            console.log('resSetShips: ',resSetShips);
+            //console.log('resSetShips: ',resSetShips);
 
             if (resSetShips.init == 2) {
 
               res.type = 'start_game';
 
               const newGamePartnerData = getGamePartnerData(addShipsData.gameId, addShipsData.indexPlayer);
-              
               const newGameCurrentUserData = getGamePartnerData(addShipsData.gameId, newGamePartnerData.currentPlayerIndex);
 
               res.data = JSON.stringify(newGameCurrentUserData);
-
               ws.send(JSON.stringify(res));
 
-
-              userId == newGamePartnerData.currentPlayerIndex;
+              userId = newGamePartnerData.currentPlayerIndex;
               res.data = JSON.stringify(newGamePartnerData);
               if (userId) {
                 userWs = getUserSession(userId);
@@ -154,14 +150,11 @@
               const turnPlayerId: any = {
                 currentPlayer: addShipsData.indexPlayer
               };
-    
               res.data = JSON.stringify(turnPlayerId);
+
               if (userWs) {
                 userWs.send(JSON.stringify(res));
               }
-    
-
-              res.data = JSON.stringify(turnPlayerId);
               ws.send(JSON.stringify(res));
 
             } 
