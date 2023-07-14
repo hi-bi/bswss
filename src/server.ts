@@ -35,12 +35,14 @@
 
             resData = userLogin(JSON.parse(reqData), ws);
             res.data = JSON.stringify(resData);
-            ws.send(JSON.stringify(res));        
-
-            res.type = 'update_room';
-            resNewGameRooms = updateRooms();
-            res.data = JSON.stringify(resNewGameRooms);
             ws.send(JSON.stringify(res));
+            
+            if (!resData.error) {
+              res.type = 'update_room';
+              resNewGameRooms = updateRooms();
+              res.data = JSON.stringify(resNewGameRooms);
+              ws.send(JSON.stringify(res));
+            }
 
             break;
 

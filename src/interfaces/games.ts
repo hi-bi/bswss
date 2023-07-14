@@ -194,7 +194,7 @@ export const attackResponse = function (attackData: any) {
 
             } 
 
-            console.log('aroundCells: ', aroundCells);
+            //console.log('aroundCells: ', aroundCells);
 
             for (let item of currentBoard.fld.values()) {
                 if (item.isShip && item.status == '') {

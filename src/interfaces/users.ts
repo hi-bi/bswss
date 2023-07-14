@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import {addUserSession} from './user_session';
+import {addUserSession, getSessionUser, getUserSession} from './user_session';
 
 interface InternalUser {
     userId: number;
@@ -43,15 +43,27 @@ export const userLogin = function (user: User, ws: WebSocket) {
                 currentUser = item;
             }
         }
-      
+        
         if (currentUser) {
 
             const userPassword = currentUser.password;
 
             if (userPassword == user.password) {
                 
+                const userWs = getUserSession(currentUser.userId);
+                if (userWs) {
+                    if (userWs.readyState === WebSocket.OPEN) {
+                        resUser.error = true;
+                        resUser.errorText = 'Open session exists! Please, use or close it.';
+                    } else {
+                        resUser.index = currentUser.userId;
+                        addUserSession(resUser.index, ws);
+                    }
 
-                resUser.index = currentUser.userId;
+                } else {
+                    resUser.index = currentUser.userId;
+                    addUserSession(resUser.index, ws);
+                }
 
             } else {
                 resUser.error = true;
@@ -72,8 +84,6 @@ export const userLogin = function (user: User, ws: WebSocket) {
             addUserSession(usersId, ws);
         }
     
-        console.log(users);
-
         return resUser;
             
     } catch (error) {

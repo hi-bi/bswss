@@ -1,72 +1,74 @@
-import { users } from "./users";
+    import { users } from "./users";
 
-interface RoomUsers {
-    name: string;
-    index: number
-}
-
-interface Room {
-    roomId: number;
-    roomUsers: RoomUsers[];
-}
-
-let roomsId: number = 0;
-const rooms: Room[] = [];
-
-export const newRoom = function (userId: any) {
-
-    const currentUser: any = users.get(userId);
-
-    console.log('currentUser: ', currentUser);
-
-    roomsId++;
-
-    const room: Room = {
-        roomId: roomsId,
-        roomUsers: [{name: currentUser.name, index: userId}]
+    interface RoomUsers {
+        name: string;
+        index: number
     }
 
-    console.log(userId, room);
-    
-    rooms.push(room);
+    interface Room {
+        roomId: number;
+        roomUsers: RoomUsers[];
+    }
 
-    console.log(rooms);
-    
-    return rooms;
-};
+    let roomsId: number = 0;
+    const rooms: Room[] = [];
 
-export const addUserToRoom = function (roomId: any, userId: any) {
+    export const newRoom = function (userId: any) {
 
-    console.log('addUserToRoom: ', roomId, userId)
+        const rmItem = rooms.findIndex((item) => item.roomUsers[0].index === userId);
+        if (rmItem >= 0) {
+            return;
+        }
 
-    const currentUser: any = users.get(userId);
+        const currentUser: any = users.get(userId);
 
-    const currentRoomUsers: any = [];
-    const currentRoom = rooms.filter(item => item.roomId == roomId);
+        roomsId++;
 
-    if (currentRoom.length > 0 && currentRoom[0].roomUsers[0].index != userId) {
+        const room: Room = {
+            roomId: roomsId,
+            roomUsers: [{name: currentUser.name, index: userId}]
+        }
 
-        currentRoomUsers.push(currentRoom[0].roomUsers[0].index);
-        currentRoomUsers.push(userId);
+        rooms.push(room);
         
-        currentRoom[0].roomUsers.push({name: currentUser.name, index: userId})
+        return rooms;
     };
 
-    console.log('currentRoom: ', currentRoom);
-    
-    return currentRoomUsers;
-};
+    export const addUserToRoom = function (roomId: any, userId: any) {
 
-export const updateRooms = function () {
+        const currentUser: any = users.get(userId);
 
-    let rmItem = rooms.findIndex((item) => item.roomUsers.length === 2);
-    while (rmItem >= 0) {
-        rooms.splice(rmItem, 1);
+        const currentRoomUsers: any = [];
+        const currentRoom = rooms.filter(item => item.roomId == roomId);
+
+        if (currentRoom.length > 0 && currentRoom[0].roomUsers[0].index != userId) {
+
+            currentRoomUsers.push(currentRoom[0].roomUsers[0].index);
+            currentRoomUsers.push(userId);
+            
+            currentRoom[0].roomUsers.push({name: currentUser.name, index: userId})
+
+
+            let roomUser = userId
+            let rmItem = rooms.findIndex((item) => item.roomUsers.length === 1 && item.roomUsers[0].index === roomUser);
+            while (rmItem >= 0) {
+                rooms.splice(rmItem, 1);
+                rmItem = rooms.findIndex((item) => item.roomUsers.length === 1 && item.roomUsers[0].index === roomUser);
+            }
         
-        rmItem = rooms.findIndex((item) => item.roomUsers.length === 2);
-    }
+        };
 
-    console.log(rooms);
-    
-    return rooms;
-};
+        return currentRoomUsers;
+    };
+
+    export const updateRooms = function () {
+
+        let rmItem = rooms.findIndex((item) => item.roomUsers.length === 2);
+        while (rmItem >= 0) {
+            rooms.splice(rmItem, 1);
+            
+            rmItem = rooms.findIndex((item) => item.roomUsers.length === 2);
+        }
+
+        return rooms;
+    };
