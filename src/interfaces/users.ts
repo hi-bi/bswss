@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import {addUserSession, getSessionUser, getUserSession} from './user_session';
 
-interface InternalUser {
+export interface InternalUser {
     userId: number;
     name: string;
     password: string;

@@ -3,6 +3,7 @@
     import { newRoom, addUserToRoom, updateRooms } from './interfaces/rooms';
     import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse, getTurnUserId, setTurnUserId } from './interfaces/games';
     import { getSessionUser, getUserSession } from './interfaces/user_session';
+    import { addUserWin, getWinners } from './interfaces/winners';
 
     const serverPort: number = parseInt(process.env.SERVER_PORT || '3000'); 
 
@@ -42,6 +43,15 @@
               resNewGameRooms = updateRooms();
               res.data = JSON.stringify(resNewGameRooms);
               ws.send(JSON.stringify(res));
+
+              res.type = 'update_winners';
+              res.data = JSON.stringify(getWinners());
+              wss.clients.forEach(function each(client) {
+                if (client.readyState === WebSocket.OPEN) {
+                  client.send(JSON.stringify(res));
+                }
+              });
+
             }
 
             break;
@@ -232,6 +242,17 @@
                   if (userWs) {
                     userWs.send(JSON.stringify(res));
                   }
+
+                  addUserWin(attackData.indexPlayer);
+
+                  res.type = 'update_winners';
+                  res.data = JSON.stringify(getWinners());
+                  wss.clients.forEach(function each(client) {
+                    if (client.readyState === WebSocket.OPEN) {
+                      client.send(JSON.stringify(res));
+                    }
+                  });
+    
 
                 }
                 
