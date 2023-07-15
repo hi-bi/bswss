@@ -65,6 +65,15 @@ export const addNewBot = function () {
 
 }
 
+export const isBot = function (botId: number) {
+    
+    if (users.get(botId)?.name === botName) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 export const userLogin = function (user: User, ws: WebSocket) {
 
     user.name = user.name.trim();

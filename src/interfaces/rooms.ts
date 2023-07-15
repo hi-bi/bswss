@@ -34,6 +34,15 @@
         return rooms;
     };
 
+    export const deleteUserRoom = function (userId: number) {
+
+        const rmItem = rooms.findIndex((item) => item.roomUsers[0].index === userId || item.roomUsers[1].index === userId );
+        if (rmItem >= 0) {
+            rooms.splice(rmItem, 1);
+        }
+
+    } 
+
     export const addUserToRoom = function (roomId: any, userId: any) {
 
         const currentUser: any = users.get(userId);

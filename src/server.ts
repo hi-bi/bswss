@@ -1,7 +1,7 @@
   import WebSocket, { WebSocketServer } from 'ws';
-  import { addNewBot, botName, botPass, setRootBotId, userLogin } from './interfaces/users';
-  import { newRoom, addUserToRoom, updateRooms } from './interfaces/rooms';
-  import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse, getTurnUserId, setTurnUserId } from './interfaces/games';
+  import { addNewBot, botName, botPass, isBot, setRootBotId, userLogin } from './interfaces/users';
+  import { newRoom, addUserToRoom, updateRooms, deleteUserRoom } from './interfaces/rooms';
+  import { deleteGame, newGame, newGameUser, setShips, getUserGame, getGamePartnerData, getRandomAttack, startGame, attackResponse, getTurnUserId, setTurnUserId } from './interfaces/games';
   import { getSessionUser, getUserSession } from './interfaces/user_session';
   import { addUserWin, getWinners } from './interfaces/winners';
   import { getShips } from './interfaces/ships';
@@ -51,23 +51,60 @@
 
         break;
     
-        case 'create_game':
-          res.type = 'add_ships';
+      case 'create_game':
+        res.type = 'add_ships';
 
-          resData.gameId = reqData.idGame;
-          resData.indexPlayer = reqData.idPlayer;
-          
-          const newShips = getShips();  
-          resData.ships = newShips;
-          console.log('[bot message] create_game resData: ', resData)
+        resData.gameId = reqData.idGame;
+        resData.indexPlayer = reqData.idPlayer;
+        
+        const newShips = getShips();  
+        resData.ships = newShips;
+        console.log('[bot message] create_game resData: ', resData)
 
-          res.data = JSON.stringify(resData);
+        res.data = JSON.stringify(resData);
 
-          bs.send(JSON.stringify(res) );
-          console.log('[bot message] add_chips sended data: ', JSON.stringify(res));
+        bs.send(JSON.stringify(res) );
+        console.log('[bot message] add_chips sended data: ', JSON.stringify(res));
+
         break;
 
-        default:
+      case 'turn':
+
+        botId = reqData.currentPlayer;
+        if (isBot(botId)) {
+
+          console.log('botId: ', botId)
+          
+          const gameId = getUserGame(botId);
+          console.log('gameId: ', gameId)
+          
+          if (gameId > 0) {
+
+            res.type = 'attack';
+            resData.gameId = gameId;
+            resData.indexPlayer = botId;
+
+            const position =  getRandomAttack(gameId, botId);
+            resData.x = position.x;
+            resData.y = position.y;
+  
+            setTimeout( () => {
+              console.log('[bot message] position: ', position);
+
+              res.data = JSON.stringify(resData);
+              bs.send(JSON.stringify(res) );
+
+              console.log('[bot message] turn sended data: ', JSON.stringify(res));
+  
+            }, 1500);
+    
+          } 
+        
+        }
+
+        break;
+  
+      default:
         break;
     }
 
@@ -115,8 +152,9 @@
             userWs.send(JSON.stringify(res));
           }
 
-          //!! remove userId room if exists
-
+          if (userId) {
+            deleteUserRoom(userId);
+          }
 
           res.type = 'update_room';
           
@@ -330,6 +368,18 @@
           
               }
 
+              res.type = 'turn';
+            
+              setTurnUserId(attackData.gameId, attackData.indexPlayer)
+              
+              res.data = JSON.stringify({currentPlayer: attackData.indexPlayer});
+              ws.send(JSON.stringify(res));
+              
+              userWs = getUserSession(attackedPlayerId);
+              if (userWs) {
+                userWs.send(JSON.stringify(res));
+              }
+
               const finish = resultAttack.finish
               if (finish) {
                 res.type = 'finish';
@@ -342,8 +392,6 @@
                   userWs.send(JSON.stringify(res));
                 }
 
-                addUserWin(attackData.indexPlayer);
-
                 res.type = 'update_winners';
                 res.data = JSON.stringify(getWinners());
                 wss.clients.forEach(function each(client) {
@@ -352,9 +400,23 @@
                   }
                 });
 
+                deleteGame(attackData.indexPlayer);
 
               }
               
+            } else {
+              res.type = 'turn';
+            
+              setTurnUserId(attackData.gameId, attackData.indexPlayer)
+              
+              res.data = JSON.stringify({currentPlayer: attackData.indexPlayer});
+              ws.send(JSON.stringify(res));
+  
+              userWs = getUserSession(attackedPlayerId);
+              if (userWs) {
+                userWs.send(JSON.stringify(res));
+              }
+
             }
           }
 

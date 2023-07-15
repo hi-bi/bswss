@@ -33,3 +33,7 @@ export const getSessionUser = function (ws: WebSocket): number|undefined {
     
     return currentUser; 
 }
+
+export const deleteUserSession = function ( userId: number) {
+    users_session.delete(userId);
+}
