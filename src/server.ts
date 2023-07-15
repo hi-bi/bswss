@@ -1,5 +1,5 @@
 import WebSocket, { WebSocketServer } from 'ws';
-import { userLogin } from './interfaces/users';
+import { addNewBot, botName, botPass, setRootBotId, userLogin } from './interfaces/users';
 import { newRoom, addUserToRoom, updateRooms } from './interfaces/rooms';
 import { newGame, newGameUser, setShips, getGamePartnerData, startGame, attackResponse, getTurnUserId, setTurnUserId } from './interfaces/games';
 import { getSessionUser, getUserSession } from './interfaces/user_session';
@@ -19,8 +19,8 @@ bs.onopen = function(event) {
     type: "reg",
     data: JSON.stringify(
       {
-        name: 'Bot',
-        password: '',
+        name: botName,
+        password: botPass,
       },
     ),
     id: 0,
@@ -41,15 +41,22 @@ bs.onmessage = function(event) {
 
   switch (reqCommand) {
     case 'reg':
-        console.log('Bot socket created: ', JSON.parse(reqData))
+      setRootBotId();
+      console.log('Bot socket connection established: ', reqData);
+
       break;
   
-    default:
+      case 'create_game':
+
+
+        console.log('create_game: ', JSON.parse(reqData))
+      break;
+
+      default:
       break;
   }
 
 };
-
 
 
 wss.on('connection', function connection(ws) {
@@ -75,12 +82,35 @@ wss.on('connection', function connection(ws) {
     
     switch (reqCommand) {
       case 'single_play':
-      
-        res.type = 'create_game';
-        let data = {idGame: 999, idPlayer: 99}
-        res.data = JSON.stringify(data);
 
+        res.type = 'create_game';
+
+        const newGameId = newGame();
+
+        userId = getSessionUser(ws);
+        let resNewGameData = newGameUser(newGameId, userId);
+        res.data = JSON.stringify(resNewGameData);
         ws.send(JSON.stringify(res));
+
+        const newBotId = addNewBot().index;
+        resNewGameData = newGameUser(newGameId, newBotId);
+        res.data = JSON.stringify(resNewGameData);
+        userWs = getUserSession(newBotId);
+        if (userWs) {
+          userWs.send(JSON.stringify(res));
+        }
+
+        //!! remove userId room 
+        res.type = 'update_room';
+        
+        resNewGameRooms = updateRooms();
+        res.data = JSON.stringify(resNewGameRooms);
+
+        wss.clients.forEach(function each(client) {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(res));
+          }
+        });
 
         break
 

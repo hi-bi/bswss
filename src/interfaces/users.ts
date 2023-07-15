@@ -9,6 +9,9 @@ export interface InternalUser {
 
 export const users = new Map<number, InternalUser>();
 let usersId = 0;
+export const botName = 'Bot';
+export const botPass = '';
+let rootBotId = -1;
 
 export interface User  {
     name: string;
@@ -20,6 +23,46 @@ export interface ResponseUser  {
     index: number;
     error: boolean; 
     errorText: string; 
+}
+
+export const setRootBotId = function () {
+
+    for (let [key, value] of users) {
+        if (value.name === botName) {
+            rootBotId = key;
+        }
+    }
+
+    console.log('rootBotId: ', rootBotId)
+
+}
+
+export const addNewBot = function () {
+
+    usersId++;
+    const botId = usersId;
+
+    const resUser: ResponseUser = {
+        name: 'Bot',
+        index: botId,
+        error: false, 
+        errorText: '' 
+    };
+
+    users.set(usersId, {
+        userId: usersId,
+        name: botName,
+        password: botPass
+    });
+
+    const ws = getUserSession(rootBotId);
+
+    if (ws) {
+        addUserSession(botId, ws);
+    }
+
+    return resUser;
+
 }
 
 export const userLogin = function (user: User, ws: WebSocket) {
