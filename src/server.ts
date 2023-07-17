@@ -409,4 +409,42 @@
       }
     
     });
+
+    ws.on('close', function() {
+
+      const userId = getSessionUser(ws);
+
+      if (userId) {
+
+        const gameId = getUserGame(userId);
+
+        if (gameId) {
+
+          const gamePartnerData = getGamePartnerData(gameId, userId);
+          
+          const partnerId = gamePartnerData.currentPlayerIndex;
+
+          if (partnerId) {
+
+            let res: any = {};
+
+            res.type = 'finish';
+            res.data = JSON.stringify({winPlayer: partnerId});
+  
+            ws.send(JSON.stringify(res));
+  
+            const userWs = getUserSession(partnerId);
+            if (userWs) {
+              userWs.send(JSON.stringify(res));
+            }
+  
+          }
+
+          deleteGame( gameId);
+
+        }
+      }
+
+    });
+
   });
