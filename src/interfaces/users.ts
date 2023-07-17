@@ -33,8 +33,6 @@ export const setRootBotId = function () {
         }
     }
 
-    console.log('rootBotId: ', rootBotId)
-
 }
 
 export const addNewBot = function () {

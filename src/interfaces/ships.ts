@@ -13,7 +13,6 @@ export const getShips = function () {
     const shipsCount = ships.length;
 
     const randomIndex = Math.round(Math.random()*1000000) % shipsCount;
-    console.log('randomIndex: ', randomIndex);
 
     return ships[randomIndex];
 }

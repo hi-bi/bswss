@@ -21,8 +21,6 @@ export const initField = function (ships: any) {
         const ship = ships[item];
         ship.attack = 0;
 
-        //console.log('ship: ', ship);
-
         let strtX = ship.position.x;
         let strtY = ship.position.y;
 

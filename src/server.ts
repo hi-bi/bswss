@@ -27,11 +27,12 @@
       id: 0,
     }
     bs.send(JSON.stringify(botReg) );
+    console.log('[bot message] output: ', JSON.stringify(botReg));
 
   };
 
   bs.onmessage = function(event) {
-    console.log(`[bot message] Received data: ${event.data}`);
+    console.log(`[bot message] input: ${event.data}`);
     let body = '';
     body += event.data;
 
@@ -59,12 +60,11 @@
         
         const newShips = getShips();  
         resData.ships = newShips;
-        console.log('[bot message] create_game resData: ', resData)
 
         res.data = JSON.stringify(resData);
 
         bs.send(JSON.stringify(res) );
-        console.log('[bot message] add_chips sended data: ', JSON.stringify(res));
+        console.log('[bot message] output: ', JSON.stringify(res));
 
         break;
 
@@ -73,10 +73,7 @@
         botId = reqData.currentPlayer;
         if (isBot(botId)) {
 
-          console.log('botId: ', botId)
-          
           const gameId = getUserGame(botId);
-          console.log('gameId: ', gameId)
           
           if (gameId > 0) {
 
@@ -89,14 +86,13 @@
             resData.y = position.y;
   
             setTimeout( () => {
-              console.log('[bot message] position: ', position);
 
               res.data = JSON.stringify(resData);
               bs.send(JSON.stringify(res) );
 
-              console.log('[bot message] turn sended data: ', JSON.stringify(res));
+              console.log('[bot message]output: ', JSON.stringify(res));
   
-            }, 1500);
+            }, 1200);
     
           } 
         
@@ -130,7 +126,7 @@
 
       let resNewGameRooms = updateRooms();
 
-      console.log(`type-${reqCommand}: ${reqData}`);
+      //console.log(`type-${reqCommand}: ${reqData}`);
       
       switch (reqCommand) {
         case 'single_play':
@@ -212,15 +208,11 @@
         
         case 'add_user_to_room':
           
-          console.log('add_user_to_room');
-          
           const addRoom = JSON.parse(reqData);
           const addUser = getSessionUser(ws);
 
           const currentRoomUsers = addUserToRoom(addRoom.indexRoom, addUser);
 
-          console.log('currentRoomUsers: ', currentRoomUsers);
-          
           if (currentRoomUsers.length == 2) {
 
             const newGameId = newGame();
@@ -232,7 +224,6 @@
             res.data = JSON.stringify(resNewGameData);
             if (userWs) {
               userWs.send(JSON.stringify(res));
-              console.log('create_game res: ',  res);
             }
 
             userWs = getUserSession(currentRoomUsers[1]);
@@ -240,7 +231,6 @@
             res.data = JSON.stringify(resNewGameData);
             if (userWs) {
               userWs.send(JSON.stringify(res));
-              console.log('create_game res: ',  res);
             }
 
 
@@ -252,8 +242,6 @@
             wss.clients.forEach(function each(client) {
               if (client.readyState === WebSocket.OPEN) {
 
-                console.log('update_room res: ',  res);
-                
                 client.send(JSON.stringify(res));
               }
             });
@@ -264,13 +252,9 @@
 
         case 'add_ships':
           
-          console.log('add_ships');
-    
           const addShipsData = JSON.parse(reqData);
 
           const resSetShips = setShips(addShipsData)
-
-          //console.log('resSetShips: ',resSetShips);
 
           if (resSetShips.init == 2) {
 
@@ -312,8 +296,6 @@
 
         case 'attack':          
 
-          console.log('attack');
-      
           const attackData = JSON.parse(reqData);
 
           if (attackData.indexPlayer != getTurnUserId(attackData.gameId)) {
@@ -323,8 +305,6 @@
           const resultAttack = attackResponse(attackData);
           const resAttackData = resultAttack.resData;
           const attackedPlayerId = resultAttack.partnerId;
-
-          console.log('AttackData: ', attackData);
 
           res.data = JSON.stringify(resAttackData);
 
@@ -391,6 +371,8 @@
                 if (userWs) {
                   userWs.send(JSON.stringify(res));
                 }
+
+                addUserWin(attackData.indexPlayer);
 
                 res.type = 'update_winners';
                 res.data = JSON.stringify(getWinners());

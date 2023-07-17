@@ -46,8 +46,6 @@
             }
         );
 
-        console.log(gamesId, games);
-        
         return {idGame: gameId, idPlayer: userId};
     };
 
@@ -123,7 +121,6 @@
         for (let item of currentGame.boards.values()) {
             item.fld = initField(item.ships);
             
-            //console.log('startGame: ', item)
         }
 
     };
@@ -229,8 +226,6 @@
 
                 } 
 
-                //console.log('aroundCells: ', aroundCells);
-
                 for (let item of currentBoard.fld.values()) {
                     if (item.isShip && item.status == '') {
                         finish = false;
@@ -277,7 +272,6 @@
             let gi = 0;
             let item = -1;
             let cell: any;
-            console.log('count: ', count)
 
             for (let i = 0; i < count; i++) {
 
@@ -301,7 +295,6 @@
                 }
                 
             }
-            console.log('cell: :', item, cell);
             
             position.x = Math.floor(item / 10);
             position.y = item % 10;
