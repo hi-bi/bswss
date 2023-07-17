@@ -418,15 +418,15 @@
 
         const gameId = getUserGame(userId);
 
+        let res: any = {};
+
         if (gameId) {
 
           const gamePartnerData = getGamePartnerData(gameId, userId);
-          
-          const partnerId = gamePartnerData.currentPlayerIndex;
 
-          if (partnerId) {
+          if (gamePartnerData) {
 
-            let res: any = {};
+            const partnerId = gamePartnerData.currentPlayerIndex;
 
             res.type = 'finish';
             res.data = JSON.stringify({winPlayer: partnerId});
@@ -443,6 +443,21 @@
           deleteGame( gameId);
 
         }
+
+        deleteUserRoom(userId);
+
+        res.type = 'update_room';
+            
+        const resGameRooms = updateRooms();
+        res.data = JSON.stringify(resGameRooms);
+
+        wss.clients.forEach(function each(client) {
+          if (client.readyState === WebSocket.OPEN) {
+
+            client.send(JSON.stringify(res));
+          }
+        });
+
       }
 
     });

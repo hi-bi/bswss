@@ -102,14 +102,20 @@
     export const getGamePartnerData = function (gameId: any, userId: any) {
 
         const currentGame = games.get(gameId);
-        let gamePartnerData: any = {};
+        let gamePartnerData: any;
 
-        for (let item of currentGame.boards.values()) {
-            if (item.indexPlayer != userId) {
-                gamePartnerData.ships = item.ships;
-                gamePartnerData.currentPlayerIndex = item.indexPlayer;
-            }
-        } 
+        if (currentGame) {
+
+            gamePartnerData = {};
+
+            for (let item of currentGame.boards.values()) {
+                if (item.indexPlayer != userId) {
+                    gamePartnerData.ships = item.ships;
+                    gamePartnerData.currentPlayerIndex = item.indexPlayer;
+                }
+            } 
+    
+        }
 
         return gamePartnerData;
     };
