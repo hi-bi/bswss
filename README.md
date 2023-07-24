@@ -16,7 +16,9 @@ The backend implements the following logic:
     - Interaction with the bot is logged in consol.log
 
 Installation:
-
+  
+  - Battleship frontend is installed separately
+  
   - Clone/download repo
   
   - npm install
