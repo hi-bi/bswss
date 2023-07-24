@@ -1,0 +1,53 @@
+{
+  "name": "bswss",
+  "version": "1.0.0",
+  "description": "Backend implementation of the battleship frontend using nodejs web sockets",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon -e ts --watch src .env --exec \"tsc --incremental && ts-node src/server.ts\"",
+    "start:dev": "nodemon --exec ts-node ./src/server.ts",
+    "build": "tsc",
+    "start:prod": "npm run build && node dist/index.js",
+    "start:webpack": "node ./server.js",
+    "start:dev-webpack": "nodemon ./server.js",
+    "build:webpack": "webpack --config webpack.config.js --mode=production",
+    "start:prod-webpack": "webpack --config webpack.config.js --mode=production && node ./dist/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hi-bi/bswss.git"
+  },
+  "keywords": [
+    "battleship",
+    "backend",
+    "nodejs",
+    "websocket"
+  ],
+  "author": "hi-bi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hi-bi/bswss/issues"
+  },
+  "homepage": "https://github.com/hi-bi/bswss#readme",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "@types/ws": "^8.5.5",
+    "@webpack-cli/generators": "^3.0.7",
+    "babel-loader": "^9.1.2",
+    "css-loader": "^6.8.1",
+    "mini-css-extract-plugin": "^2.7.6",
+    "nodemon": "^3.0.1",
+    "prettier": "^2.8.8",
+    "style-loader": "^3.3.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.6",
+    "webpack": "^5.88.1",
+    "webpack-cli": "^5.1.4"
+  }
+}
