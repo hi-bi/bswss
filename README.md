@@ -17,6 +17,8 @@ The backend implements the following logic:
 
 Installation:
 
+  - Battleship frontend is installed separately
+  
   - Clone/download repo
   
   - npm install
